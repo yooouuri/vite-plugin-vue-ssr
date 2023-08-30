@@ -1,0 +1,68 @@
+{
+  "name": "vite-plugin-vue-ssr",
+  "version": "0.0.0",
+  "type": "module",
+  "license": "MIT",
+  "description": "Vite plugin to develop Vue 3 SSR apps",
+  "bugs": {
+    "url": "https://github.com/yooouuri/vite-plugin-vue-ssr/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yooouuri/vite-plugin-vue-ssr.git"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    },
+    "./plugin": {
+      "import": "./dist/plugin/index.js",
+      "types": "./dist/plugin/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "rollup -c",
+    "dev": "rollup -w -c",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "vue3",
+    "ssr",
+    "vite"
+  ],
+  "dependencies": {
+    "@babel/generator": "^7.21.4",
+    "@babel/parser": "^7.21.4",
+    "@babel/traverse": "^7.21.4",
+    "@babel/types": "^7.21.4",
+    "@nuxt/devalue": "^2.0.2",
+    "@types/express": "^4.17.17",
+    "@unhead/schema": "^1.3.9",
+    "cheerio": "1.0.0-rc.12",
+    "cookie-parser": "^1.4.6"
+  },
+  "devDependencies": {
+    "@types/node": "^18.17.1",
+    "@vueuse/head": "^1.3.1",
+    "esbuild": "^0.17.19",
+    "pinia": "^2.1.6",
+    "rollup": "^3.27.0",
+    "rollup-plugin-dts": "^5.3.1",
+    "rollup-plugin-esbuild": "^5.0.0",
+    "typescript": "^5.1.6",
+    "vite": "^4.4.9",
+    "vue": "^3.3.4",
+    "vue-router": "^4.2.4"
+  },
+  "peerDependencies": {
+    "@vueuse/head": "^1.3.1",
+    "pinia": "^2.1.6",
+    "vite": "^4.4.9",
+    "vue": "^3.3.4",
+    "vue-router": "^4.2.4"
+  }
+}
