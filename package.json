@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "type": "module",
   "license": "MIT",
-  "description": "Vite plugin to develop Vue 3 SSR apps",
+  "description": "Vite plugin to develop Vue SSR apps",
   "bugs": {
     "url": "https://github.com/yooouuri/vite-plugin-vue-ssr/issues"
   },
@@ -30,7 +30,7 @@
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "vue3",
+    "vue",
     "ssr",
     "vite"
   ],

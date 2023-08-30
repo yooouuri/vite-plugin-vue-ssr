@@ -1,6 +1,6 @@
 # vite-plugin-vue-ssr
 
-Vite plugin to develop Vue 3 SSR apps
+Vite plugin to develop Vue SSR apps
 
 ## Features
 * HMR support
