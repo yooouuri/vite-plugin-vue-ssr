@@ -3,7 +3,6 @@
 Vite plugin to develop Vue SSR apps
 
 ## Features
-* HMR support
 * Vue Router
 * State management
 * Teleports
