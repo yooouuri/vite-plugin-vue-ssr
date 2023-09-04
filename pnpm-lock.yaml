@@ -45,9 +45,6 @@ importers:
       esbuild:
         specifier: ^0.17.19
         version: 0.17.19
-      pinia:
-        specifier: ^2.1.6
-        version: 2.1.6(typescript@5.1.6)(vue@3.3.4)
       rollup:
         specifier: ^3.27.0
         version: 3.27.0
@@ -1510,6 +1507,7 @@ packages:
       typescript: 5.1.6
       vue: 3.3.4
       vue-demi: 0.14.5(vue@3.3.4)
+    dev: false
 
   /postcss@8.4.27:
     resolution: {integrity: sha512-gY/ACJtJPSmUFPDCHtX78+01fHa64FaU4zaaWfuh1MhGJISufJAH4cun6k/8fwsHYeK4UQmENQK+tRLCFJE8JQ==}
@@ -1796,6 +1794,7 @@ packages:
         optional: true
     dependencies:
       vue: 3.3.4
+    dev: false
 
   /vue-router@4.2.4(vue@3.3.4):
     resolution: {integrity: sha512-9PISkmaCO02OzPVOMq2w82ilty6+xJmQrarYZDkjZBfl4RvYAlt4PKnEX21oW4KTtWfa9OuO/b3qk1Od3AEdCQ==}
