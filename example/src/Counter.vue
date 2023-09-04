@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { onServerPrefetch, useSSRContext } from 'vue'
+import { onServerPrefetch } from 'vue'
 import { useCounterStore } from '@/stores/counter'
 
 const store = useCounterStore()
@@ -7,12 +7,6 @@ const store = useCounterStore()
 onServerPrefetch(() => {
   store.increment()
 })
-
-if (import.meta.env.SSR) {
-  const { response } = useSSRContext()
-  
-  console.log({ response })
-}
 </script>
 
 <template>
