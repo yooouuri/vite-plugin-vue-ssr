@@ -4,15 +4,15 @@ import { fileURLToPath } from 'node:url'
 import { generateTemplate } from 'vite-plugin-vue-ssr/plugin'
 import express from 'express'
 
-const app = express()
-
 const __dirname = dirname(fileURLToPath(import.meta.url))
+
+const app = express()
 
 app.use(
   '/',
   (await import('serve-static')).default(resolve('dist/client'), {
     index: false,
-  }),
+  })
 )
 app.use('*', async (req, res) => {
   const url = req.originalUrl
@@ -22,17 +22,19 @@ app.use('*', async (req, res) => {
   const template = readFileSync(resolve('dist/client/index.html'), 'utf-8')
 
   const manifest = JSON.parse(
-    readFileSync(resolve('dist/client/ssr-manifest.json'), 'utf-8'),
+    readFileSync(resolve('dist/client/ssr-manifest.json'), 'utf-8')
   )
 
-  const html = await generateTemplate(main, url, template, req, res, manifest)
+  const { html, redirect } = await generateTemplate(main, url, template, req, res, manifest)
 
-  // when html is undefined, the route is redirected
-  if (html === undefined) {
+  if (redirect !== null) {
+    res.redirect(redirect)
     return
   }
 
-  res.end(html)
+  res.status(200)
+    .set({ 'Content-Type': 'text/html' })
+    .end(html)
 })
 
 app.listen(3000, () => {

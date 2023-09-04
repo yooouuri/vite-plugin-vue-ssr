@@ -74,14 +74,12 @@ export async function generateTemplate(
 
   let redirect = null
 
-  const ctx: SSRContext = {}
-  ctx.request = request
-  ctx.response = response
-  ctx.redirect = (url: string) => redirect = url
-
-  if (redirect !== null) {
-    response.redirect(redirect)
-    return undefined
+  const ctx: SSRContext = {
+    request,
+    response,
+    redirect: (url: string) => {
+      redirect = url
+    },
   }
 
   const html = await renderToString(app, ctx)
@@ -147,5 +145,5 @@ export async function generateTemplate(
     $('body').append(`<div id="teleports">${teleports['#teleports']}</div>`)
   }
 
-  return $.html()
+  return { html: $.html(), redirect }
 }

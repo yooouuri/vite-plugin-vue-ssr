@@ -84,13 +84,18 @@ export default function vueSsrPlugin(): Plugin {
             const main: ReturnType<typeof vueSSRFn> = (await server.ssrLoadModule(resolve(cwd(), ssr as string))).default
 
             // @ts-ignore
-            template = await generateTemplate(main, url!, template, req, res)
+            const { html, redirect } = await generateTemplate(main, url!, template, req, res)
 
-            if (template === undefined) {
+            if (redirect !== null) {
+              // https://github.com/vitejs/vite/discussions/6562#discussioncomment-1999566
+              res.writeHead(302, {
+                location: redirect,
+              })
+              res.end()
               return
             }
 
-            res.end(template)
+            res.end(html)
           })
         }
       }
