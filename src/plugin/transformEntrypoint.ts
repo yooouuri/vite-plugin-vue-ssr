@@ -88,5 +88,6 @@ export function transformEntrypoint(code: string, ssr: boolean, ssrBuild: boolea
 
   return {
     code: generate(ast).code,
+    map: null,
   }
 }
