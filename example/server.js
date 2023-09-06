@@ -3,17 +3,15 @@ import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { generateTemplate } from 'vite-plugin-vue-ssr/plugin'
 import express from 'express'
+import cookieParser from 'cookie-parser'
+import serveStatic from 'serve-static'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
 const app = express()
 
-app.use(
-  '/',
-  (await import('serve-static')).default(resolve('dist/client'), {
-    index: false,
-  })
-)
+app.use(cookieParser())
+app.use('/', serveStatic(resolve('dist/client'), { index: false }))
 app.use('*', async (req, res) => {
   const url = req.originalUrl
 
