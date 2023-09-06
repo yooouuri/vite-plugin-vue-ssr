@@ -19,7 +19,7 @@ export default function vueSsrPlugin(): Plugin {
   const resolvedVirtualModuleId = '\0' + virtualModuleId
 
   return {
-    name: 'vue-ssr',
+    name: 'vite-plugin-vue-ssr',
     resolveId(id) {
       if (id === virtualModuleId) {
         return resolvedVirtualModuleId
