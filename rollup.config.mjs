@@ -4,7 +4,7 @@ import esbuild from 'rollup-plugin-esbuild'
 export default [
   {
     input: 'src/index.ts',
-    external: ['vue', 'vue-router'],
+    external: ['vue', 'vue-router', '@vueuse/head'],
     output: {
       format: 'es',
       file: `dist/index.js`,
@@ -36,6 +36,12 @@ export default [
       'vue/server-renderer',
       'cheerio',
       '@nuxt/devalue',
+      /^node:/,
+      'cookie-parser',
+      '@babel/traverse',
+      '@babel/parser',
+      '@babel/generator',
+      '@babel/types',
     ],
     output: {
       format: 'es',
@@ -59,15 +65,4 @@ export default [
        }),
     ],
   },
-  // {
-  //   input: 'src/plugin/vue.ts',
-  //   external: ['vue', 'vue-router', '@vueuse/head'],
-  //   output: {
-  //     file: 'dist/plugin/vue.js',
-  //     format: 'es',
-  //   },
-  //   plugins: [
-  //     esbuild(),
-  //   ],
-  // },
 ]
