@@ -20,7 +20,7 @@ app.use('*', async (req, res) => {
   const template = readFileSync(resolve('dist/client/index.html'), 'utf-8')
 
   const manifest = JSON.parse(
-    readFileSync(resolve('dist/client/ssr-manifest.json'), 'utf-8')
+    readFileSync(resolve('dist/client/.vite/ssr-manifest.json'), 'utf-8')
   )
 
   const { html, redirect } = await generateTemplate(main, url, template, req, res, manifest)
