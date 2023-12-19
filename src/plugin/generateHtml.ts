@@ -1,4 +1,4 @@
-import { SSRContext } from 'vue/server-renderer'
+import type { SSRContext } from 'vue/server-renderer'
 import { load } from 'cheerio'
 import { ModuleNode } from 'vite'
 import type { HeadTag } from '@unhead/schema'
@@ -60,19 +60,22 @@ function renderPreloadLink(file: string) {
 
 export async function generateHtml(template: string,
                                    rendered: string,
-                                   modules: Set<ModuleNode>,
                                    ctx: SSRContext,
                                    state: State,
-                                   head: HeadClient) {
+                                   head: HeadClient,
+                                   cssModules?: Set<ModuleNode>,
+                                   manifest?: object) {
   const $ = load(template)
 
   $('#app').html(rendered)
 
-  const preloadLinks = renderPreloadLinks(ctx.modules, {})
+  const preloadLinks = renderPreloadLinks(ctx.modules, manifest ?? {})
   $('head').append(preloadLinks)
 
-  const styles = renderCssForSsr(modules)
-  $('head').append(styles)
+  if (cssModules !== undefined) {
+    const styles = renderCssForSsr(cssModules)
+    $('head').append(styles)
+  }
 
   if (state !== undefined) {
     const devalue = (await import('@nuxt/devalue')).default

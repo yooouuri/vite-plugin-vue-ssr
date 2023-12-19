@@ -1,14 +1,14 @@
 import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { cwd } from 'node:process'
-import { ModuleNode, Plugin } from 'vite'
+import type { Plugin } from 'vite'
 import type { App } from 'vue'
+import { renderToString, SSRContext } from 'vue/server-renderer'
 // @ts-ignore
 import cookieParser from 'cookie-parser'
 import { transformEntrypoint } from './transformEntrypoint'
-import { generateHtml } from './generateTemplate'
+import { generateHtml } from './generateHtml'
 import type { Params, CallbackFn } from '../types'
-import { renderToString, SSRContext } from 'vue/server-renderer'
 
 declare function vueSSRFn(App: App, params: Params, cb: CallbackFn): { App: App } & Params & { cb: CallbackFn }
 
@@ -107,15 +107,15 @@ export default function vueSsrPlugin(): Plugin {
 
             const rendered = await renderToString(app, ctx)
 
-            const loadedModules = server.moduleGraph.getModulesByFile(resolve(cwd(), ssr as string)) ?? new Set<ModuleNode>()
+            const loadedModules = server.moduleGraph.getModulesByFile(resolve(cwd(), ssr as string))
 
             const html = await generateHtml(
               template,
               rendered,
-              loadedModules,
               ctx,
               state,
-              head)
+              head,
+              loadedModules)
 
             if (redirect !== null) {
               // https://github.com/vitejs/vite/discussions/6562#discussioncomment-1999566
@@ -134,4 +134,44 @@ export default function vueSsrPlugin(): Plugin {
   }
 }
 
-// export { generateTemplate }
+async function generateTemplate(
+  { App, routes, head: _head, scrollBehavior, cb }: { App: App } & Params & { cb: CallbackFn }, 
+  url: string,
+  template: string,
+  request: Request,
+  response: Response,
+  manifest: object = {})
+{
+  const { vueSSR } = (await import('./vue'))
+
+  const { app, router, state, head } = vueSSR(App, { routes, head: _head, scrollBehavior }, undefined, true, true)
+
+  if (cb !== undefined) {
+    cb({ app, router, state })
+    // cb({ app, router, state, req, res })
+  }
+
+  await router.push(url!)
+  await router.isReady()
+
+  let redirect = null
+
+  const ctx: SSRContext = {
+    req: request,
+    res: response,
+    redirect: (url: string) => {
+      redirect = url
+    },
+  }
+
+  const rendered = await renderToString(app, ctx)
+
+  const html = await generateHtml(template, rendered, ctx, state, head, undefined, manifest)
+
+  return {
+    html,
+    redirect,
+  }
+}
+
+export { generateTemplate }
