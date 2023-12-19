@@ -85,7 +85,7 @@ export default function vueSsrPlugin(): Plugin {
 
             const { vueSSR } = (await import('./vue'))
 
-            const { app, router, state } = vueSSR(App, { routes }, undefined, true, true)
+            const { app, router, state, head } = vueSSR(App, { routes }, undefined, true, true)
 
             if (cb !== undefined) {
               cb({ app, router, state })
@@ -113,7 +113,9 @@ export default function vueSsrPlugin(): Plugin {
               template,
               rendered,
               loadedModules,
-              ctx)
+              ctx,
+              state,
+              head)
 
             if (redirect !== null) {
               // https://github.com/vitejs/vite/discussions/6562#discussioncomment-1999566

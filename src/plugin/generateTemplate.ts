@@ -1,7 +1,9 @@
 import { SSRContext } from 'vue/server-renderer'
 import { load } from 'cheerio'
 import { ModuleNode } from 'vite'
+import type { Head } from '@unhead/schema'
 import { basename } from 'node:path'
+import { State } from '../types'
 
 function renderPreloadLinks(modules: string[], manifest: any /* TODO */) {
   let links = ''
@@ -180,7 +182,9 @@ function renderCssForSsr(mods: Set<ModuleNode>, styles = new Map<string, string>
 export async function generateHtml(template: string,
                                    rendered: string,
                                    modules: Set<ModuleNode>,
-                                   ctx: SSRContext) {
+                                   ctx: SSRContext,
+                                   state: State,
+                                   head: Head) {
   const $ = load(template)
 
   $('#app').html(rendered)
@@ -190,6 +194,11 @@ export async function generateHtml(template: string,
 
   const styles = renderCssForSsr(modules)
   $('head').append(styles)
+
+  if (state !== undefined) {
+    const devalue = (await import('@nuxt/devalue')).default
+    $('body').append(`<script>window.__INITIAL_STATE__ = ${devalue(state.value)}</script>`)
+  }
 
   return $.html()
 }
