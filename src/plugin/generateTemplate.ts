@@ -1,34 +1,35 @@
-import { SSRContext, renderToString } from 'vue/server-renderer'
+import { SSRContext } from 'vue/server-renderer'
 import { load } from 'cheerio'
-import devalue from '@nuxt/devalue'
+import { ModuleNode } from 'vite'
 import { basename } from 'node:path'
-import type { App } from 'vue'
-import type { HeadTag } from '@vueuse/head'
-import type { Request, Response } from 'express'
-import type { Params, CallbackFn } from '../types'
-import {ModuleNode, ViteDevServer} from "vite";
 
 function renderPreloadLinks(modules: string[], manifest: any /* TODO */) {
   let links = ''
   const seen = new Set()
+
   modules.forEach(id => {
     const files = manifest[id]
+
     if (files) {
       files.forEach((file: any /* TODO */) => {
         if (!seen.has(file)) {
           seen.add(file)
+
           const filename = basename(file)
+
           if (manifest[filename]) {
             for (const depFile of manifest[filename]) {
               links += renderPreloadLink(depFile)
               seen.add(depFile)
             }
           }
+
           links += renderPreloadLink(file)
         }
       })
     }
   })
+
   return links
 }
 
@@ -149,38 +150,37 @@ function renderPreloadLink(file: string) {
 //   return { html: $.html(), redirect }
 // }
 
+function renderCssForSsr(mods: Set<ModuleNode>, styles = new Map<string, string>(), checkedComponents = new Set()) {
+  for (const mod of mods) {
+    if ((mod.file?.endsWith(".scss")
+        || mod.file?.endsWith(".css")
+        || mod.id?.includes("vue&type=style")) &&
+      mod.ssrModule
+    ) {
+      styles.set(mod.id, mod.ssrModule.default)
+    }
+
+    if (mod.importedModules.size > 0 && !checkedComponents.has(mod.id)) {
+      checkedComponents.add(mod.id)
+
+      renderCssForSsr(mod.importedModules, styles, checkedComponents)
+    }
+  }
+
+  let result = ''
+
+  // TODO: reduce
+  styles.forEach((content, id) => {
+    result = result.concat(`<style type="text/css" data-vite-dev-id="${id}">${content}</style>`)
+  })
+
+  return result
+}
+
 export async function generateHtml(template: string,
                                    rendered: string,
                                    modules: Set<ModuleNode>,
                                    ctx: SSRContext) {
-  function collectCss(
-    mods: Set<ModuleNode>,
-    styles = new Map<string, string>(),
-    checkedComponents = new Set(),
-  ) {
-    for (const mod of mods) {
-      if (
-        (mod.file?.endsWith(".scss") ||
-          mod.file?.endsWith(".css") ||
-          mod.id?.includes("vue&type=style")) &&
-        mod.ssrModule
-      ) {
-        styles.set(mod.id, mod.ssrModule.default);
-      }
-      if (mod.importedModules.size > 0 && !checkedComponents.has(mod.id)) {
-        checkedComponents.add(mod.id);
-        collectCss(mod.importedModules, styles, checkedComponents);
-      }
-    }
-
-    let result: string[] = []
-    styles.forEach((content, id) => {
-      const styleTag = `<style type="text/css" data-vite-dev-id="${id}">${content}</style>`;
-      result.push(styleTag)
-    });
-    return result;
-  }
-
   const $ = load(template)
 
   $('#app').html(rendered)
@@ -188,13 +188,8 @@ export async function generateHtml(template: string,
   const preloadLinks = renderPreloadLinks(ctx.modules, {})
   $('head').append(preloadLinks)
 
-  const result = collectCss(modules)
-
-  for (const tag of result) {
-    $('head').append(tag)
-  }
-
-  console.log($.html())
+  const styles = renderCssForSsr(modules)
+  $('head').append(styles)
 
   return $.html()
 }
