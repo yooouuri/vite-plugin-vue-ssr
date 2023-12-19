@@ -81,11 +81,11 @@ export default function vueSsrPlugin(): Plugin {
             let template: string | undefined = readFileSync(resolve(cwd(), 'index.html'), 'utf-8')
             template = await server.transformIndexHtml(url!, template)
 
-            const { App, routes, cb }: ReturnType<typeof vueSSRFn> = (await server.ssrLoadModule(resolve(cwd(), ssr as string))).default
+            const { App, routes, cb, head: _head, scrollBehavior }: ReturnType<typeof vueSSRFn> = (await server.ssrLoadModule(resolve(cwd(), ssr as string))).default
 
             const { vueSSR } = (await import('./vue'))
 
-            const { app, router, state, head } = vueSSR(App, { routes }, undefined, true, true)
+            const { app, router, state, head } = vueSSR(App, { routes, head: _head, scrollBehavior }, undefined, true, true)
 
             if (cb !== undefined) {
               cb({ app, router, state })

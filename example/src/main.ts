@@ -13,7 +13,11 @@ const routes = [
   },
 ]
 
-export default vueSSR(App, { routes }, ({ app, state }) => {
+const head = {
+  title: 'Example app, using vite-plugin-vue-ssr',
+}
+
+export default vueSSR(App, { routes, head }, ({ app, state }) => {
   const pinia = createPinia()
   app.use(pinia)
 

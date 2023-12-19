@@ -1,9 +1,11 @@
 import { SSRContext } from 'vue/server-renderer'
 import { load } from 'cheerio'
 import { ModuleNode } from 'vite'
-import type { Head } from '@unhead/schema'
+import type { HeadTag } from '@unhead/schema'
 import { basename } from 'node:path'
 import { State } from '../types'
+import { renderCssForSsr } from './renderCssForSsr'
+import { HeadClient } from '@vueuse/head'
 
 function renderPreloadLinks(modules: string[], manifest: any /* TODO */) {
   let links = ''
@@ -56,39 +58,12 @@ function renderPreloadLink(file: string) {
   }
 }
 
-function renderCssForSsr(mods: Set<ModuleNode>, styles = new Map<string, string>(), checkedComponents = new Set()) {
-  for (const mod of mods) {
-    if ((mod.file?.endsWith('.scss')
-        || mod.file?.endsWith('.css')
-        || mod.id?.includes('vue&type=style')) &&
-      mod.ssrModule
-    ) {
-      styles.set(mod.id, mod.ssrModule.default)
-    }
-
-    if (mod.importedModules.size > 0 && !checkedComponents.has(mod.id)) {
-      checkedComponents.add(mod.id)
-
-      renderCssForSsr(mod.importedModules, styles, checkedComponents)
-    }
-  }
-
-  let result = ''
-
-  // TODO: reduce
-  styles.forEach((content, id) => {
-    result = result.concat(`<style type="text/css" data-vite-dev-id="${id}">${content}</style>`)
-  })
-
-  return result
-}
-
 export async function generateHtml(template: string,
                                    rendered: string,
                                    modules: Set<ModuleNode>,
                                    ctx: SSRContext,
                                    state: State,
-                                   head: Head) {
+                                   head: HeadClient) {
   const $ = load(template)
 
   $('#app').html(rendered)
@@ -102,6 +77,54 @@ export async function generateHtml(template: string,
   if (state !== undefined) {
     const devalue = (await import('@nuxt/devalue')).default
     $('body').append(`<script>window.__INITIAL_STATE__ = ${devalue(state.value)}</script>`)
+  }
+
+  const resolvedTags = await head.resolveTags() as HeadTag[]
+
+  let tags = ['title', 'meta', 'link', 'base', 'style', 'script', 'noscript']
+
+  if ($('title').length === 1) {
+    tags = tags.filter(t => t !== 'title')
+    const title = resolvedTags.find(t => t.tag === 'title')
+
+    if (title !== undefined) {
+      // @ts-ignore
+      $('title').text(title.textContent)
+    }
+  }
+
+  tags.map(tag => {
+    resolvedTags
+      .filter(t => t.tag === tag)
+      .map(t => {
+        let props = ''
+
+        for (const [key, value] of Object.entries(t.props)) {
+          props = `${props} ${key}="${value}"`
+        }
+
+        if (t.innerHTML !== undefined) {
+          $('head').append(`<${tag} ${props}>${t.innerHTML}</${tag}>`)
+        } else {
+          $('head').append(`<${tag} ${props}>`)
+        }
+      })
+  })
+
+  const bodyAttrs = resolvedTags.find(t => t.tag === 'bodyAttrs')
+
+  if (bodyAttrs !== undefined) {
+    for (const [key, value] of Object.entries(bodyAttrs.props)) {
+      $('body').attr(key, value)
+    }
+  }
+
+  const htmlAttrs = resolvedTags.find(t => t.tag === 'htmlAttrs')
+
+  if (htmlAttrs !== undefined) {
+    for (const [key, value] of Object.entries(htmlAttrs.props)) {
+      $('html').attr(key, value)
+    }
   }
 
   return $.html()
