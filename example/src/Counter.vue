@@ -16,9 +16,3 @@ onServerPrefetch(() => {
     <button @click="store.increment">Increment</button>
   </div>
 </template>
-
-<style>
-div {
-  background-color: red;
-}
-</style>
