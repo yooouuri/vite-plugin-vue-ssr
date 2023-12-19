@@ -10,7 +10,15 @@ onServerPrefetch(() => {
 </script>
 
 <template>
-  {{ store.count }}
+  <div>
+    {{ store.count }}
 
-  <button @click="store.increment">Increment</button>
+    <button @click="store.increment">Increment</button>
+  </div>
 </template>
+
+<style>
+div {
+  background-color: red;
+}
+</style>

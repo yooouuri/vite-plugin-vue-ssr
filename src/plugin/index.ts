@@ -1,14 +1,16 @@
 import { readFileSync } from 'node:fs'
 import { basename, resolve } from 'node:path'
 import { cwd } from 'node:process'
-import { Plugin } from 'vite'
+import {ModuleNode, Plugin, ViteDevServer} from 'vite'
 import type { App } from 'vue'
 // @ts-ignore
 import cookieParser from 'cookie-parser'
 import { transformEntrypoint } from './transformEntrypoint'
-import { generateTemplate } from './generateTemplate'
+import { generateHtml } from './generateTemplate'
 
 import type { Params, CallbackFn } from '../types'
+import {load} from "cheerio";
+import {renderToString, SSRContext} from "vue/server-renderer";
 
 declare function vueSSRFn(App: App, params: Params, cb: CallbackFn): { App: App } & Params & { cb: CallbackFn }
 
@@ -81,10 +83,39 @@ export default function vueSsrPlugin(): Plugin {
             let template: string | undefined = readFileSync(resolve(cwd(), 'index.html'), 'utf-8')
             template = await server.transformIndexHtml(url!, template)
 
-            const main: ReturnType<typeof vueSSRFn> = (await server.ssrLoadModule(resolve(cwd(), ssr as string))).default
+            const { App, routes, cb }: ReturnType<typeof vueSSRFn> = (await server.ssrLoadModule(resolve(cwd(), ssr as string))).default
 
-            // @ts-ignore
-            const { html, redirect } = await generateTemplate(main, url!, template, req, res)
+            const { vueSSR } = (await import('./vue'))
+
+            const { app, router, state } = vueSSR(App, { routes }, undefined, true, true)
+
+            if (cb !== undefined) {
+              cb({ app, router, state })
+              // cb({ app, router, state, req, res })
+            }
+
+            await router.push(url!)
+            await router.isReady()
+
+            let redirect = null
+
+            const ctx: SSRContext = {
+              req,
+              res,
+              redirect: (url: string) => {
+                redirect = url
+              },
+            }
+
+            const rendered = await renderToString(app, ctx)
+
+            // const components = router.currentRoute.value.matched.flatMap(record =>
+            //     // @ts-ignore
+            //     Object.values(record.components)
+            //   // @ts-ignore
+            // ).map(component => component.__file) as string[]
+
+            const html = await generateHtml(template, rendered, server.moduleGraph.getModulesByFile(resolve(cwd(), ssr as string))!, ctx)
 
             if (redirect !== null) {
               // https://github.com/vitejs/vite/discussions/6562#discussioncomment-1999566
@@ -103,4 +134,4 @@ export default function vueSsrPlugin(): Plugin {
   }
 }
 
-export { generateTemplate }
+// export { generateTemplate }
