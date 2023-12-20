@@ -1,3 +1,17 @@
+<script setup lang="ts">
+import { useHead } from '@unhead/vue'
+
+useHead({
+  title: 'Example app, using vite-plugin-vue-ssr'
+})
+</script>
+
 <template>
-  <router-view></router-view>
+  <RouterView />
 </template>
+
+<style>
+body {
+  background: yellow;
+}
+</style>

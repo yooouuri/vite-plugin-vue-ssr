@@ -6,7 +6,7 @@ Vite plugin to develop Vue SSR apps
 * Vue Router
 * State management
 * Teleports
-* Document head management (powered by [@vueuse/head](https://github.com/vueuse/head))
+* [Unhead](https://unhead.unjs.io) support
 
 ## Quick Setup
 

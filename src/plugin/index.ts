@@ -1,13 +1,13 @@
 import { readFileSync } from 'node:fs'
-import { basename, resolve } from 'node:path'
+import { resolve } from 'node:path'
 import { cwd } from 'node:process'
-import { Plugin } from 'vite'
+import type { Plugin } from 'vite'
 import type { App } from 'vue'
+import { renderToString, SSRContext } from 'vue/server-renderer'
 // @ts-ignore
 import cookieParser from 'cookie-parser'
 import { transformEntrypoint } from './transformEntrypoint'
-import { generateTemplate } from './generateTemplate'
-
+import { generateHtml } from './generateHtml'
 import type { Params, CallbackFn } from '../types'
 
 declare function vueSSRFn(App: App, params: Params, cb: CallbackFn): { App: App } & Params & { cb: CallbackFn }
@@ -81,10 +81,41 @@ export default function vueSsrPlugin(): Plugin {
             let template: string | undefined = readFileSync(resolve(cwd(), 'index.html'), 'utf-8')
             template = await server.transformIndexHtml(url!, template)
 
-            const main: ReturnType<typeof vueSSRFn> = (await server.ssrLoadModule(resolve(cwd(), ssr as string))).default
+            const { App, routes, cb, scrollBehavior }: ReturnType<typeof vueSSRFn> = (await server.ssrLoadModule(resolve(cwd(), ssr as string))).default
 
-            // @ts-ignore
-            const { html, redirect } = await generateTemplate(main, url!, template, req, res)
+            const { vueSSR } = (await import('./vue'))
+
+            const { app, router, state, head } = vueSSR(App, { routes, scrollBehavior }, undefined, true, true)
+
+            if (cb !== undefined) {
+              cb({ app, router, state })
+              // cb({ app, router, state, req, res })
+            }
+
+            await router.push(url!)
+            await router.isReady()
+
+            let redirect = null
+
+            const ctx: SSRContext = {
+              req,
+              res,
+              redirect: (url: string) => {
+                redirect = url
+              },
+            }
+
+            const rendered = await renderToString(app, ctx)
+
+            const loadedModules = server.moduleGraph.getModulesByFile(resolve(cwd(), ssr as string))
+
+            const html = await generateHtml(
+              template,
+              rendered,
+              ctx,
+              state,
+              head,
+              loadedModules)
 
             if (redirect !== null) {
               // https://github.com/vitejs/vite/discussions/6562#discussioncomment-1999566
@@ -100,6 +131,46 @@ export default function vueSsrPlugin(): Plugin {
         }
       }
     },
+  }
+}
+
+async function generateTemplate(
+  { App, routes, scrollBehavior, cb }: { App: App } & Params & { cb: CallbackFn }, 
+  url: string,
+  template: string,
+  request: Request,
+  response: Response,
+  manifest: object = {})
+{
+  const { vueSSR } = (await import('./vue'))
+
+  const { app, router, state, head } = vueSSR(App, { routes, scrollBehavior }, undefined, true, true)
+
+  if (cb !== undefined) {
+    cb({ app, router, state })
+    // cb({ app, router, state, req, res })
+  }
+
+  await router.push(url!)
+  await router.isReady()
+
+  let redirect = null
+
+  const ctx: SSRContext = {
+    req: request,
+    res: response,
+    redirect: (url: string) => {
+      redirect = url
+    },
+  }
+
+  const rendered = await renderToString(app, ctx)
+
+  const html = await generateHtml(template, rendered, ctx, state, head, undefined, manifest)
+
+  return {
+    html,
+    redirect,
   }
 }
 
