@@ -1,6 +1,5 @@
 import { vueSSR } from 'vite-plugin-vue-ssr'
 import { createPinia } from 'pinia'
-
 import App from '@/App.vue'
 
 const Counter = () => import('@/Counter.vue')
@@ -13,11 +12,7 @@ const routes = [
   },
 ]
 
-const head = {
-  title: 'Example app, using vite-plugin-vue-ssr',
-}
-
-export default vueSSR(App, { routes, head }, ({ app, state }) => {
+export default vueSSR(App, { routes }, ({ app, state }) => {
   const pinia = createPinia()
   app.use(pinia)
 

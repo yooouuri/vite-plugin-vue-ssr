@@ -1,14 +1,15 @@
-import { type Component, createSSRApp, createApp } from 'vue'
+import { type Component, type App, createSSRApp, createApp } from 'vue'
 import {
+  Router,
   createMemoryHistory,
   createRouter,
   createWebHistory
 } from 'vue-router'
-import { createHead } from '@vueuse/head'
+import { MergeHead, VueHeadClient, createHead } from '@unhead/vue'
 import type { State, CallbackFn, Params } from '../types'
 
-export function vueSSR(App: Component, params: Params, cb?: CallbackFn, ssrBuild = false, ssr = false) {
-  const { routes, head: headDefaults, scrollBehavior } = params
+export function vueSSR(App: Component, params: Params, cb?: CallbackFn, ssrBuild = false, ssr = false): { app: App, router: Router, state: State, head: VueHeadClient<MergeHead>, scrollBehavior: any, cb: CallbackFn | undefined }  {
+  const { routes, scrollBehavior } = params
 
   const state: State = {
     value: undefined,
@@ -28,7 +29,7 @@ export function vueSSR(App: Component, params: Params, cb?: CallbackFn, ssrBuild
   })
   app.use(router)
 
-  const head = createHead(headDefaults)
+  const head = createHead()
   app.use(head)
 
   if (cb !== undefined) {

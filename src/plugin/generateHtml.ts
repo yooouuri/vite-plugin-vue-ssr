@@ -1,11 +1,10 @@
 import type { SSRContext } from 'vue/server-renderer'
 import { load } from 'cheerio'
 import { ModuleNode } from 'vite'
-import type { HeadTag } from '@unhead/schema'
+import type { VueHeadClient, MergeHead } from '@unhead/vue'
 import { basename } from 'node:path'
 import { State } from '../types'
 import { renderCssForSsr } from './renderCssForSsr'
-import { HeadClient } from '@vueuse/head'
 
 function renderPreloadLinks(modules: string[], manifest: any /* TODO */) {
   let links = ''
@@ -62,7 +61,7 @@ export async function generateHtml(template: string,
                                    rendered: string,
                                    ctx: SSRContext,
                                    state: State,
-                                   head: HeadClient,
+                                   head: VueHeadClient<MergeHead>,
                                    cssModules?: Set<ModuleNode>,
                                    manifest?: object) {
   const $ = load(template)
@@ -82,7 +81,7 @@ export async function generateHtml(template: string,
     $('body').append(`<script>window.__INITIAL_STATE__ = ${devalue(state.value)}</script>`)
   }
 
-  const resolvedTags = await head.resolveTags() as HeadTag[]
+  const resolvedTags = await head.resolveTags()
 
   let tags = ['title', 'meta', 'link', 'base', 'style', 'script', 'noscript']
 
