@@ -6,6 +6,9 @@ import type { App } from 'vue'
 import { renderToString, SSRContext } from 'vue/server-renderer'
 // @ts-ignore
 import cookieParser from 'cookie-parser'
+import type { Request, Response } from 'express'
+// @ts-ignore
+import * as cookie from 'cookie'
 import { transformEntrypoint } from './transformEntrypoint'
 import { generateHtml } from './generateHtml'
 import type { Params, CallbackFn } from '../types'
@@ -75,8 +78,8 @@ export default function vueSsrPlugin(): Plugin {
       if (ssr) {
         return () => {
           server.middlewares.use(cookieParser())
-          server.middlewares.use(async (req, res) => {
-            const url = req.originalUrl
+          server.middlewares.use(async (request, response) => {
+            const url = request.originalUrl
   
             let template: string | undefined = readFileSync(resolve(cwd(), 'index.html'), 'utf-8')
             template = await server.transformIndexHtml(url!, template)
@@ -88,8 +91,8 @@ export default function vueSsrPlugin(): Plugin {
             const { app, router, state, head } = vueSSR(App, { routes, scrollBehavior }, undefined, true, true)
 
             if (cb !== undefined) {
-              cb({ app, router, state })
-              // cb({ app, router, state, req, res })
+              // @ts-ignore
+              cb({ app, router, state, request, response })
             }
 
             await router.push(url!)
@@ -97,9 +100,17 @@ export default function vueSsrPlugin(): Plugin {
 
             let redirect = null
 
+            const cookies = new Set<string>()
+
             const ctx: SSRContext = {
-              req,
-              res,
+              request,
+              response: {
+                // https://github.com/expressjs/express/blob/master/lib/response.js#L854-L887
+                cookie: (name: string, value: string, options: any) => {
+                  cookies.add(cookie.serialize(name, value, options))
+                },
+                ...response,
+              },
               redirect: (url: string) => {
                 redirect = url
               },
@@ -117,16 +128,18 @@ export default function vueSsrPlugin(): Plugin {
               head,
               loadedModules)
 
+            response.setHeader('Set-Cookie', [...cookies])
+
             if (redirect !== null) {
               // https://github.com/vitejs/vite/discussions/6562#discussioncomment-1999566
-              res.writeHead(302, {
+              response.writeHead(302, {
                 location: redirect,
-              })
-              res.end()
+              }).end()
+
               return
             }
 
-            res.end(html)
+            response.end(html)
           })
         }
       }
@@ -147,8 +160,7 @@ async function generateTemplate(
   const { app, router, state, head } = vueSSR(App, { routes, scrollBehavior }, undefined, true, true)
 
   if (cb !== undefined) {
-    cb({ app, router, state })
-    // cb({ app, router, state, req, res })
+    cb({ app, router, state, request, response })
   }
 
   await router.push(url!)
@@ -157,8 +169,8 @@ async function generateTemplate(
   let redirect = null
 
   const ctx: SSRContext = {
-    req: request,
-    res: response,
+    request,
+    response,
     redirect: (url: string) => {
       redirect = url
     },
