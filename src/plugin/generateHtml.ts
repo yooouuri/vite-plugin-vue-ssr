@@ -81,6 +81,12 @@ export async function generateHtml(template: string,
     $('body').append(`<script>window.__INITIAL_STATE__ = ${devalue(state.value)}</script>`)
   }
 
+  const teleports = ctx.teleports ?? {}
+
+  if (teleports['#teleports'] !== undefined) {
+    $('body').append(`<div id="teleports">${teleports['#teleports']}</div>`)
+  }
+
   const resolvedTags = await head.resolveTags()
 
   let tags = ['title', 'meta', 'link', 'base', 'style', 'script', 'noscript']
