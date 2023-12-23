@@ -16,6 +16,8 @@ Vite plugin to develop Vue SSR apps
 pnpm install vite-plugin-vue-ssr -D
 ```
 
+> Install devalue if you need to hydrate the state
+
 vite.config.ts
 ```ts
 import { defineConfig } from 'vite'
