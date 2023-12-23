@@ -76,7 +76,7 @@ export async function generateHtml(template: string,
     $('head').append(styles)
   }
 
-  if (state !== undefined) {
+  if (state.value !== undefined) {
     const { uneval } = await import('devalue')
 
     $('body').append(`<script>window.__INITIAL_STATE__ = ${uneval(state.value)}</script>`)
