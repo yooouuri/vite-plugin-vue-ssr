@@ -77,8 +77,9 @@ export async function generateHtml(template: string,
   }
 
   if (state !== undefined) {
-    const devalue = (await import('@nuxt/devalue')).default
-    $('body').append(`<script>window.__INITIAL_STATE__ = ${devalue(state.value)}</script>`)
+    const { uneval } = await import('devalue')
+
+    $('body').append(`<script>window.__INITIAL_STATE__ = ${uneval(state.value)}</script>`)
   }
 
   const teleports = ctx.teleports ?? {}
