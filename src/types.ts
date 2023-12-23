@@ -2,7 +2,7 @@ import type { App } from 'vue'
 import type { RouteRecordRaw, Router, RouterScrollBehavior } from 'vue-router'
 import type { Request, Response } from 'express'
 
-export type State = { value?: any }
+export type State = { value?: Record<string, any> }
 
 export type Params = {
   routes: RouteRecordRaw[]
