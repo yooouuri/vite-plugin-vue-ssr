@@ -18,29 +18,29 @@ declare function vueSSRFn(App: App, params: Params, cb: CallbackFn): { App: App 
 export default function vueSsrPlugin(): Plugin {
   let ssr: boolean | string | undefined
 
-  const virtualModuleId = 'virtual:ssr-entry-point'
-  const resolvedVirtualModuleId = '\0' + virtualModuleId
+  // const virtualModuleId = 'virtual:ssr-entry-point'
+  // const resolvedVirtualModuleId = '\0' + virtualModuleId
 
   return {
     name: 'vite-plugin-vue-ssr',
-    resolveId(id) {
-      if (id === virtualModuleId) {
-        return resolvedVirtualModuleId
-      }
-    },
-    load(id) {
-      if (id === resolvedVirtualModuleId) {
-        return `export function vueSSR(App, { routes, head, scrollBehavior }, cb) {
-          return {
-            App,
-            routes,
-            head,
-            scrollBehavior,
-            cb,
-          }
-        }`
-      }
-    },
+    // resolveId(id) {
+    //   if (id === virtualModuleId) {
+    //     return resolvedVirtualModuleId
+    //   }
+    // },
+    // load(id) {
+    //   if (id === resolvedVirtualModuleId) {
+    //     return `export function vueSSR(App, { routes, head, scrollBehavior }, cb) {
+    //       return {
+    //         App,
+    //         routes,
+    //         head,
+    //         scrollBehavior,
+    //         cb,
+    //       }
+    //     }`
+    //   }
+    // },
     config(config, { command }) {
       ssr = config.build?.ssr
 
