@@ -12,7 +12,8 @@ import * as cookie from 'cookie'
 import { transformEntrypoint } from './transformEntrypoint'
 import { generateHtml } from './generateHtml'
 import type { Params, CallbackFn } from '../types'
-import type { vueSSR } from '../entrypoint'
+
+declare function vueSSRFn(component: Component, params: Params, cb: CallbackFn): { component: Component } & Params & { cb: CallbackFn }
 
 export default function vueSsrPlugin(): Plugin {
   let ssr: boolean | string | undefined
@@ -48,8 +49,8 @@ export default function vueSsrPlugin(): Plugin {
       ]
     },
     transform(code, id, options) {
-      if (id.endsWith('main.ts')) {
-        return transformEntrypoint(code, options?.ssr ?? false, !!ssr)
+      if (id.endsWith('main.ts') && !options?.ssr) {
+        return transformEntrypoint(code, !!ssr)
       }
     },
     configureServer(server) {
@@ -62,11 +63,11 @@ export default function vueSsrPlugin(): Plugin {
             let template: string | undefined = readFileSync(resolve(cwd(), 'index.html'), 'utf-8')
             template = await server.transformIndexHtml(url!, template)
 
-            const { component, routes, cb, scrollBehavior }: ReturnType<typeof vueSSR> = (await server.ssrLoadModule(resolve(cwd(), ssr as string))).default
+            const { component, routes, cb, scrollBehavior }: ReturnType<typeof vueSSRFn> = (await server.ssrLoadModule(resolve(cwd(), ssr as string))).default
 
-            const { createVueApp } = (await import('./vue'))
+            const { vueSSR } = (await import('./vue'))
 
-            const { app, router, state, head } = createVueApp(component, { routes, scrollBehavior }, undefined, true, true)
+            const { app, router, state, head } = vueSSR(component, { routes, scrollBehavior }, undefined, true, true)
 
             if (cb !== undefined) {
               // @ts-ignore
@@ -133,9 +134,9 @@ async function generateTemplate(
   response: Response,
   manifest: object = {})
 {
-  const { createVueApp } = (await import('./vue'))
+  const { vueSSR } = (await import('./vue'))
 
-  const { app, router, state, head } = createVueApp(component, { routes, scrollBehavior }, undefined, true, true)
+  const { app, router, state, head } = vueSSR(component, { routes, scrollBehavior }, undefined, true, true)
 
   if (cb !== undefined) {
     cb({ app, router, state, request, response })
