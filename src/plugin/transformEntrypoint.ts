@@ -8,15 +8,7 @@ import t from '@babel/types'
 export function transformEntrypoint(code: string, ssr: boolean, ssrBuild: boolean) {
   const ast = parse(code, { sourceType: 'module' })
 
-  // if (ssr) {
-  //   traverse(ast, {
-  //     ImportDeclaration(path) {
-  //       if (path.node.source.value === 'vite-plugin-vue-ssr') {
-  //         path.node.source.value = 'virtual:ssr-entry-point'
-  //       }
-  //     },
-  //   })
-  // } else {
+  if (!ssr) {
     traverse(ast, {
       ExportDefaultDeclaration(path) {
         path.replaceWithMultiple(
@@ -84,7 +76,7 @@ export function transformEntrypoint(code: string, ssr: boolean, ssrBuild: boolea
         )
       },
     })
-  // }
+  }
 
   return {
     code: generate(ast).code,
