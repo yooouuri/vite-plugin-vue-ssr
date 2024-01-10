@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs'
 import { resolve } from 'node:path'
 import { cwd } from 'node:process'
 import type { Plugin } from 'vite'
-import type { App } from 'vue'
+import type { Component } from 'vue'
 import { renderToString, SSRContext } from 'vue/server-renderer'
 // @ts-ignore
 import cookieParser from 'cookie-parser'
@@ -126,7 +126,7 @@ export default function vueSsrPlugin(): Plugin {
 }
 
 async function generateTemplate(
-  { App, routes, scrollBehavior, cb }: { App: App } & Params & { cb: CallbackFn }, 
+  { component, routes, scrollBehavior, cb }: { component: Component } & Params & { cb: CallbackFn }, 
   url: string,
   template: string,
   request: Request,
@@ -135,7 +135,7 @@ async function generateTemplate(
 {
   const { createVueApp } = (await import('./vue'))
 
-  const { app, router, state, head } = createVueApp(App, { routes, scrollBehavior }, undefined, true, true)
+  const { app, router, state, head } = createVueApp(component, { routes, scrollBehavior }, undefined, true, true)
 
   if (cb !== undefined) {
     cb({ app, router, state, request, response })
