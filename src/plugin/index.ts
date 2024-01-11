@@ -48,13 +48,7 @@ export default function vueSsrPlugin(): Plugin {
       ]
     },
     transform(code, id, options) {
-      if (id.endsWith('main.ts') && options?.ssr) {
-        console.log(code)
-      }
-
       if (id.endsWith('main.ts') && !options?.ssr) {
-        console.log(transformEntrypoint(code, !!ssr).code)
-
         return transformEntrypoint(code, !!ssr)
       }
     },
