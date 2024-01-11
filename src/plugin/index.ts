@@ -12,8 +12,7 @@ import * as cookie from 'cookie'
 import { transformEntrypoint } from './transformEntrypoint'
 import { generateHtml } from './generateHtml'
 import type { Params, CallbackFn } from '../types'
-
-declare function vueSSRFn(component: Component, params: Params, cb: CallbackFn): { component: Component } & Params & { cb: CallbackFn }
+import type { vueSSR } from './vue'
 
 export default function vueSsrPlugin(): Plugin {
   let ssr: boolean | string | undefined
@@ -49,7 +48,13 @@ export default function vueSsrPlugin(): Plugin {
       ]
     },
     transform(code, id, options) {
+      if (id.endsWith('main.ts') && options?.ssr) {
+        console.log(code)
+      }
+
       if (id.endsWith('main.ts') && !options?.ssr) {
+        console.log(transformEntrypoint(code, !!ssr).code)
+
         return transformEntrypoint(code, !!ssr)
       }
     },
@@ -63,11 +68,7 @@ export default function vueSsrPlugin(): Plugin {
             let template: string | undefined = readFileSync(resolve(cwd(), 'index.html'), 'utf-8')
             template = await server.transformIndexHtml(url!, template)
 
-            const { component, routes, cb, scrollBehavior }: ReturnType<typeof vueSSRFn> = (await server.ssrLoadModule(resolve(cwd(), ssr as string))).default
-
-            const { vueSSR } = (await import('./vue'))
-
-            const { app, router, state, head } = vueSSR(component, { routes, scrollBehavior }, undefined, true, true)
+            const { app, router, cb, head, state }: ReturnType<typeof vueSSR> = (await server.ssrLoadModule(resolve(cwd(), ssr as string))).default
 
             if (cb !== undefined) {
               // @ts-ignore

@@ -8,7 +8,7 @@ import {
 import { MergeHead, VueHeadClient, createHead } from '@unhead/vue'
 import type { State, CallbackFn, Params } from '../types'
 
-export function vueSSR(component: Component, params: Params, cb?: CallbackFn, ssrBuild = false, ssr = false): { app: App, router: Router, state: State, head: VueHeadClient<MergeHead>, scrollBehavior: any, cb: CallbackFn | undefined }  {
+export function vueSSR(component: Component, params: Params, cb?: CallbackFn, ssrBuild = true, ssr = true): { app: App, router: Router, state: State, head: VueHeadClient<MergeHead>, scrollBehavior: any, cb: CallbackFn | undefined }  {
   const { routes, scrollBehavior } = params
 
   const state: State = {
