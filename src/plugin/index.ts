@@ -12,6 +12,7 @@ import * as cookie from 'cookie'
 import { transformEntrypoint } from './transformEntrypoint'
 import { generateHtml } from './generateHtml'
 import type { Params, CallbackFn } from '../types'
+import { Router } from 'vue-router'
 
 declare function vueSSRFn(App: App, params: Params, cb: CallbackFn): { App: App } & Params & { cb: CallbackFn }
 
@@ -88,12 +89,14 @@ export default function vueSsrPlugin(): Plugin {
 
             const { vueSSR } = (await import('./vue'))
 
-            const { app, router, state, head } = vueSSR(App, { routes, scrollBehavior }, undefined, true, true)
-
-            if (cb !== undefined) {
-              // @ts-ignore
-              cb({ app, router, state, request, response })
+            function callbackFn(request: Request, response: Response) {
+              return async function({ app, router, state }: { app: App, router: Router, state: any }) {
+                return await cb({ app, router, state, request, response })
+              }
             }
+          
+            // @ts-ignore
+            const { app, router, state, head } = await vueSSR(App, { routes, scrollBehavior }, callbackFn(request, response), true, true)
 
             await router.push(url!)
             await router.isReady()
@@ -157,11 +160,14 @@ async function generateTemplate(
 {
   const { vueSSR } = (await import('./vue'))
 
-  const { app, router, state, head } = vueSSR(App, { routes, scrollBehavior }, undefined, true, true)
-
-  if (cb !== undefined) {
-    cb({ app, router, state, request, response })
+  function callbackFn(request: Request, response: Response) {
+    return async function({ app, router, state }: { app: App, router: Router, state: any }) {
+      return await cb({ app, router, state, request, response })
+    }
   }
+
+  // @ts-ignore
+  const { app, router, state, head } = await vueSSR(App, { routes, scrollBehavior }, callbackFn(request, response), true, true)
 
   await router.push(url!)
   await router.isReady()
