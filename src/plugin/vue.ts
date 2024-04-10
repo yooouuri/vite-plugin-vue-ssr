@@ -7,7 +7,7 @@ import {
 import { createHead } from '@vueuse/head'
 import type { State, CallbackFn, Params } from '../types'
 
-export function vueSSR(App: Component, params: Params, cb?: CallbackFn, ssrBuild = false, ssr = false) {
+export async function vueSSR(App: Component, params: Params, cb?: CallbackFn, ssrBuild = false, ssr = false) {
   const { routes, head: headDefaults, scrollBehavior } = params
 
   const state: State = {
@@ -21,18 +21,24 @@ export function vueSSR(App: Component, params: Params, cb?: CallbackFn, ssrBuild
 
   const app = ssrBuild ? createSSRApp(App) : createApp(App)
 
-  const router = createRouter({
-    history: ssr ? createMemoryHistory('/') : createWebHistory('/'),
-    routes,
-    scrollBehavior,
-  })
-  app.use(router)
-
   const head = createHead(headDefaults)
   app.use(head)
 
+  let router = undefined
+
   if (cb !== undefined) {
-    cb({ app, router, state })
+    const { router: _router } = await cb({ app, router, state })
+
+    router = _router
+  }
+
+  if (router === undefined) {
+    router = createRouter({
+      history: ssr ? createMemoryHistory('/') : createWebHistory('/'),
+      routes: routes ?? [],
+      scrollBehavior,
+    })
+    app.use(router)
   }
 
   return {

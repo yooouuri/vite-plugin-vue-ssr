@@ -6,15 +6,15 @@ import type { Head } from '@unhead/schema'
 export type State = { value?: any }
 
 export type Params = {
-  routes: RouteRecordRaw[]
+  routes?: RouteRecordRaw[]
   head?: Head
   scrollBehavior?: RouterScrollBehavior
 }
 
 export type CallbackFn = (params: {
   app: App
-  router: Router
+  router?: Router
   state: State
   request?: Request
   response?: Response
-}) => void
+}) => Promise<{ router: Router }>

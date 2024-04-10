@@ -1,10 +1,11 @@
 import { SSRContext, renderToString } from 'vue/server-renderer'
+import type { App } from 'vue'
 import { load } from 'cheerio'
 import devalue from '@nuxt/devalue'
 import { basename } from 'node:path'
-import type { App } from 'vue'
 import type { HeadTag } from '@vueuse/head'
 import type { Request, Response } from 'express'
+import { Router } from 'vue-router'
 import type { Params, CallbackFn } from '../types'
 
 function renderPreloadLinks(modules: string[], manifest: any /* TODO */) {
@@ -61,11 +62,14 @@ export async function generateTemplate(
   manifest: object = {}) {
   const { vueSSR } = (await import('./vue'))
 
-  const { app, router, state, head } = vueSSR(App, { routes }, undefined, true, true)
-
-  if (cb !== undefined) {
-    cb({ app, router, state, request, response })
+  function callbackFn(request: Request, response: Response) {
+    return async function({ app, router, state }: { app: App, router: Router, state: any }) {
+      return await cb({ app, router, state, request, response })
+    }
   }
+ 
+  // @ts-ignore
+  const { app, router, state, head } = await vueSSR(App, { routes }, callbackFn(request, response), true, true)
 
   const $ = load(template)
 
