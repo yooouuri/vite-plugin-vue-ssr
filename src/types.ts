@@ -1,13 +1,11 @@
 import type { App } from 'vue'
 import type { RouteRecordRaw, Router, RouterScrollBehavior } from 'vue-router'
 import type { Request, Response } from 'express'
-import type { Head } from '@unhead/schema'
 
-export type State = { value?: any }
+export type State = { value?: Record<string, any> }
 
 export type Params = {
-  routes?: RouteRecordRaw[]
-  head?: Head
+  routes: RouteRecordRaw[]
   scrollBehavior?: RouterScrollBehavior
 }
 

@@ -1,6 +1,5 @@
 import { vueSSR } from 'vite-plugin-vue-ssr'
 import { createPinia } from 'pinia'
-import { createMemoryHistory, createRouter, createWebHistory } from 'vue-router'
 import App from '@/App.vue'
 
 const Counter = () => import('@/Counter.vue')
