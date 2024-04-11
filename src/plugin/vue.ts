@@ -29,9 +29,13 @@ export async function vueSSR(App: Component, params: Params, cb?: CallbackFn, ss
 
   if (cb !== undefined) {
     // @ts-ignore
-    const { router: _router } = await cb({ app, router, state })
+    const callbackResult = await cb({ app, router, state })
 
-    router = _router
+    if (callbackResult !== undefined) {
+      const { router: _router } = callbackResult
+
+      router = _router
+    }
   }
 
   if (router === undefined) {
