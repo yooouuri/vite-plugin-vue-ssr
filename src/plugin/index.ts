@@ -80,10 +80,10 @@ export default function vueSsrPlugin(): Plugin {
         return () => {
           server.middlewares.use(cookieParser())
           server.middlewares.use(async (request, response) => {
-            const url = request.originalUrl
-  
+            const url = request.originalUrl ?? '/'
+
             let template: string | undefined = readFileSync(resolve(cwd(), 'index.html'), 'utf-8')
-            template = await server.transformIndexHtml(url!, template)
+            template = await server.transformIndexHtml(url, template)
 
             const { App, routes, cb, scrollBehavior }: ReturnType<typeof vueSSRFn> = (await server.ssrLoadModule(resolve(cwd(), ssr as string))).default
 
@@ -94,11 +94,11 @@ export default function vueSsrPlugin(): Plugin {
                 return await cb({ app, router, state, request, response })
               }
             }
-          
+
             // @ts-ignore
             const { app, router, state, head } = await vueSSR(App, { routes, scrollBehavior }, callbackFn(request, response), true, true)
 
-            await router.push(url!)
+            await router.push(url.replace(router.options.history.base, ''))
             await router.isReady()
 
             let redirect = null
@@ -169,7 +169,7 @@ async function generateTemplate(
   // @ts-ignore
   const { app, router, state, head } = await vueSSR(App, { routes, scrollBehavior }, callbackFn(request, response), true, true)
 
-  await router.push(url!)
+  await router.push(url.replace(router.options.history.base, ''))
   await router.isReady()
 
   let redirect = null
