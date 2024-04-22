@@ -115,7 +115,7 @@ export default function vueSsrPlugin(): Plugin {
                 ...response,
               },
               redirect: (url: string) => {
-                redirect = url
+                redirect = `${router.options.history.base}${url}`
               },
             }
 
@@ -178,7 +178,7 @@ async function generateTemplate(
     request,
     response,
     redirect: (url: string) => {
-      redirect = url
+      redirect = `${router.options.history.base}${url}`
     },
   }
 
