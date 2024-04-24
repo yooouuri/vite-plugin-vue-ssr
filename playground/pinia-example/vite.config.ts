@@ -5,8 +5,8 @@ import { fileURLToPath } from 'node:url'
 
 export default defineConfig({
   plugins: [
-    vueSsr(),
     vue(),
+    vueSsr(),
   ],
   resolve: {
     alias: {

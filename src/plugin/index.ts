@@ -12,6 +12,7 @@ import * as cookie from 'cookie'
 import { transformEntrypoint } from './transformEntrypoint'
 import { generateHtml } from './generateHtml'
 import type { Params, CallbackFn } from '../types'
+import { Router } from 'vue-router'
 
 declare function vueSSRFn(App: App, params: Params, cb: CallbackFn): { App: App } & Params & { cb: CallbackFn }
 
@@ -79,23 +80,25 @@ export default function vueSsrPlugin(): Plugin {
         return () => {
           server.middlewares.use(cookieParser())
           server.middlewares.use(async (request, response) => {
-            const url = request.originalUrl
-  
+            const url = request.originalUrl ?? '/'
+
             let template: string | undefined = readFileSync(resolve(cwd(), 'index.html'), 'utf-8')
-            template = await server.transformIndexHtml(url!, template)
+            template = await server.transformIndexHtml(url, template)
 
             const { App, routes, cb, scrollBehavior }: ReturnType<typeof vueSSRFn> = (await server.ssrLoadModule(resolve(cwd(), ssr as string))).default
 
             const { vueSSR } = (await import('./vue'))
 
-            const { app, router, state, head } = vueSSR(App, { routes, scrollBehavior }, undefined, true, true)
-
-            if (cb !== undefined) {
-              // @ts-ignore
-              cb({ app, router, state, request, response })
+            function callbackFn(request: Request, response: Response) {
+              return async function({ app, router, state }: { app: App, router: Router, state: any }) {
+                return await cb({ app, router, state, request, response })
+              }
             }
 
-            await router.push(url!)
+            // @ts-ignore
+            const { app, router, state, head } = await vueSSR(App, { routes, scrollBehavior }, callbackFn(request, response), true, true)
+
+            await router.push(url.replace(router.options.history.base, ''))
             await router.isReady()
 
             let redirect = null
@@ -112,7 +115,7 @@ export default function vueSsrPlugin(): Plugin {
                 ...response,
               },
               redirect: (url: string) => {
-                redirect = url
+                redirect = `${router.options.history.base}${url}`
               },
             }
 
@@ -157,13 +160,16 @@ async function generateTemplate(
 {
   const { vueSSR } = (await import('./vue'))
 
-  const { app, router, state, head } = vueSSR(App, { routes, scrollBehavior }, undefined, true, true)
-
-  if (cb !== undefined) {
-    cb({ app, router, state, request, response })
+  function callbackFn(request: Request, response: Response) {
+    return async function({ app, router, state }: { app: App, router: Router, state: any }) {
+      return await cb({ app, router, state, request, response })
+    }
   }
 
-  await router.push(url!)
+  // @ts-ignore
+  const { app, router, state, head } = await vueSSR(App, { routes, scrollBehavior }, callbackFn(request, response), true, true)
+
+  await router.push(url.replace(router.options.history.base, ''))
   await router.isReady()
 
   let redirect = null
@@ -172,7 +178,7 @@ async function generateTemplate(
     request,
     response,
     redirect: (url: string) => {
-      redirect = url
+      redirect = `${router.options.history.base}${url}`
     },
   }
 

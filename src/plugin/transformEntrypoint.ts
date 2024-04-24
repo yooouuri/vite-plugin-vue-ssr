@@ -39,10 +39,12 @@ export function transformEntrypoint(code: string, ssr: boolean, ssrBuild: boolea
                       true
                     )
                   ]),
-                  t.callExpression(
-                    t.identifier('vueSSR'),
-                    [ ...path.node.declaration.arguments, t.identifier(ssrBuild ? 'true' : 'false') ]
-                  )
+                  t.awaitExpression(
+                    t.callExpression(
+                      t.identifier('vueSSR'),
+                      [ ...path.node.declaration.arguments, t.identifier(ssrBuild ? 'true' : 'false') ]
+                    )
+                  ),
                 ),
               ]
             ),

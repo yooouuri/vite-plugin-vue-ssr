@@ -5,14 +5,14 @@ import type { Request, Response } from 'express'
 export type State = { value?: Record<string, any> }
 
 export type Params = {
-  routes: RouteRecordRaw[]
+  routes?: RouteRecordRaw[]
   scrollBehavior?: RouterScrollBehavior
 }
 
 export type CallbackFn = (params: {
   app: App
-  router: Router
+  router?: Router
   state: State
   request?: Request
   response?: Response
-}) => void
+}) => Promise<{ router: Router } | void>
