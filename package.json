@@ -35,10 +35,10 @@
     "vite"
   ],
   "dependencies": {
-    "@babel/generator": "^7.23.3",
-    "@babel/parser": "^7.23.3",
-    "@babel/traverse": "^7.23.3",
-    "@babel/types": "^7.23.3",
+    "@babel/generator": "^7.24.4",
+    "@babel/parser": "^7.24.4",
+    "@babel/traverse": "^7.24.1",
+    "@babel/types": "^7.24.0",
     "@types/express": "^4.17.21",
     "cheerio": "1.0.0-rc.12",
     "cookie": "^0.6.0",
