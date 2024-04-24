@@ -12,7 +12,7 @@ const routes = [
   },
 ]
 
-export default vueSSR(App, routes, async ({ app, state }) => {
+export default vueSSR(App, { routes }, async ({ app, state }) => {
   const pinia = createPinia()
   app.use(pinia)
 

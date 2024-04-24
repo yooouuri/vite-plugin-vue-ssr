@@ -2,7 +2,7 @@
 import { useHead } from '@unhead/vue'
 
 useHead({
-  title: 'Example app, using vite-plugin-vue-ssr'
+  title: 'Example app, using vite-plugin-vue-ssr',
 })
 </script>
 
