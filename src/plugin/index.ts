@@ -145,23 +145,15 @@ async function generateTemplate(
   await router.push(url.replace(router.options.history.base, ''))
   await router.isReady()
 
-  let redirect = null
-
   const ctx: SSRContext = {
     event,
-    // redirect: (url: string) => {
-    //   redirect = `${router.options.history.base}${url}`
-    // },
   }
 
   const rendered = await renderToString(app, ctx)
 
   const html = await generateHtml(template, rendered, ctx, state, head, undefined, manifest)
 
-  return {
-    html,
-    redirect,
-  }
+  return html
 }
 
 export { generateTemplate }

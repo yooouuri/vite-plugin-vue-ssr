@@ -22,7 +22,7 @@ app.use(fromNodeMiddleware(serveStatic(resolve('dist/client'), { index: false })
 app.use(defineEventHandler(async (event) => {
   const url = event.node.req.originalUrl ?? '/'
 
-  const { html, redirect } = await generateTemplate(main, url, template, event, manifest)
+  const html = await generateTemplate(main, url, template, event, manifest)
 
   return html
 }))
