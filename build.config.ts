@@ -16,7 +16,7 @@ export default defineBuildConfig({
   declaration: true,
   rollup: {
     esbuild: {
-      minify: true,
+      minify: false,
     },
   },
 })
