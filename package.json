@@ -40,9 +40,9 @@
     "@babel/traverse": "^7.24.1",
     "@babel/types": "^7.24.0",
     "@types/express": "^4.17.21",
-    "cheerio": "1.0.0-rc.12",
     "cookie": "^0.6.0",
-    "cookie-parser": "^1.4.6"
+    "cookie-parser": "^1.4.6",
+    "node-html-parser": "^6.1.13"
   },
   "devDependencies": {
     "@types/node": "^20.12.7",

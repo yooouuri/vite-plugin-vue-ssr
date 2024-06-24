@@ -1,5 +1,5 @@
 import type { SSRContext } from 'vue/server-renderer'
-import { load } from 'cheerio'
+import { parse } from 'node-html-parser'
 import { ModuleNode } from 'vite'
 import type { VueHeadClient, MergeHead } from '@unhead/vue'
 import { basename } from 'node:path'
@@ -64,77 +64,82 @@ export async function generateHtml(template: string,
                                    head: VueHeadClient<MergeHead>,
                                    cssModules?: Set<ModuleNode>,
                                    manifest?: object) {
-  const $ = load(template)
+  const root = parse(template, { comment: true })
 
-  $('#app').html(rendered)
+  // $('#app').html(rendered)
+  root.getElementById('app')?.set_content(rendered)
 
   const preloadLinks = renderPreloadLinks(ctx.modules, manifest ?? {})
-  $('head').append(preloadLinks)
+  // $('head').append(preloadLinks)
+  root.querySelector('head')?.insertAdjacentHTML('beforeend', preloadLinks)
 
   if (cssModules !== undefined) {
     const styles = renderCssForSsr(cssModules)
-    $('head').append(styles)
+    // $('head').append(styles)
+    root.querySelector('head')?.insertAdjacentHTML('beforeend', styles)
   }
 
   if (state.value !== undefined) {
     const { uneval } = await import('devalue')
 
-    $('body').append(`<script>window.__INITIAL_STATE__ = ${uneval(state.value)}</script>`)
+    // $('body').append(`<script>window.__INITIAL_STATE__ = ${uneval(state.value)}</script>`)
+    root.querySelector('head')?.insertAdjacentHTML('afterend', `<script>window.__INITIAL_STATE__ = ${uneval(state.value)}</script>`)
   }
 
   const teleports = ctx.teleports ?? {}
 
   if (teleports['#teleports'] !== undefined) {
-    $('body').append(`<div id="teleports">${teleports['#teleports']}</div>`)
+    // $('body').append(`<div id="teleports">${teleports['#teleports']}</div>`)
+    root.querySelector('body')?.insertAdjacentHTML('afterend', `<div id="teleports">${teleports['#teleports']}</div>`)
   }
 
-  const resolvedTags = await head.resolveTags()
+  // const resolvedTags = await head.resolveTags()
 
-  let tags = ['title', 'meta', 'link', 'base', 'style', 'script', 'noscript']
+  // let tags = ['title', 'meta', 'link', 'base', 'style', 'script', 'noscript']
 
-  if ($('title').length === 1) {
-    tags = tags.filter(t => t !== 'title')
-    const title = resolvedTags.find(t => t.tag === 'title')
+  // if ($('title').length === 1) {
+  //   tags = tags.filter(t => t !== 'title')
+  //   const title = resolvedTags.find(t => t.tag === 'title')
 
-    if (title !== undefined) {
-      // @ts-ignore
-      $('title').text(title.textContent)
-    }
-  }
+  //   if (title !== undefined) {
+  //     // @ts-ignore
+  //     $('title').text(title.textContent)
+  //   }
+  // }
 
-  tags.map(tag => {
-    resolvedTags
-      .filter(t => t.tag === tag)
-      .map(t => {
-        let props = ''
+  // tags.map(tag => {
+  //   resolvedTags
+  //     .filter(t => t.tag === tag)
+  //     .map(t => {
+  //       let props = ''
 
-        for (const [key, value] of Object.entries(t.props)) {
-          props = `${props} ${key}="${value}"`
-        }
+  //       for (const [key, value] of Object.entries(t.props)) {
+  //         props = `${props} ${key}="${value}"`
+  //       }
 
-        if (t.innerHTML !== undefined) {
-          $('head').append(`<${tag} ${props}>${t.innerHTML}</${tag}>`)
-        } else {
-          $('head').append(`<${tag} ${props}>`)
-        }
-      })
-  })
+  //       if (t.innerHTML !== undefined) {
+  //         $('head').append(`<${tag} ${props}>${t.innerHTML}</${tag}>`)
+  //       } else {
+  //         $('head').append(`<${tag} ${props}>`)
+  //       }
+  //     })
+  // })
 
-  const bodyAttrs = resolvedTags.find(t => t.tag === 'bodyAttrs')
+  // const bodyAttrs = resolvedTags.find(t => t.tag === 'bodyAttrs')
 
-  if (bodyAttrs !== undefined) {
-    for (const [key, value] of Object.entries(bodyAttrs.props)) {
-      $('body').attr(key, value)
-    }
-  }
+  // if (bodyAttrs !== undefined) {
+  //   for (const [key, value] of Object.entries(bodyAttrs.props)) {
+  //     $('body').attr(key, value)
+  //   }
+  // }
 
-  const htmlAttrs = resolvedTags.find(t => t.tag === 'htmlAttrs')
+  // const htmlAttrs = resolvedTags.find(t => t.tag === 'htmlAttrs')
 
-  if (htmlAttrs !== undefined) {
-    for (const [key, value] of Object.entries(htmlAttrs.props)) {
-      $('html').attr(key, value)
-    }
-  }
+  // if (htmlAttrs !== undefined) {
+  //   for (const [key, value] of Object.entries(htmlAttrs.props)) {
+  //     $('html').attr(key, value)
+  //   }
+  // }
 
-  return $.html()
+  return root.toString()
 }
