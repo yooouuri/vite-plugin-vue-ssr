@@ -11,10 +11,7 @@
   },
   "dependencies": {
     "@unhead/vue": "^1.9.7",
-    "compression": "^1.7.4",
-    "cookie-parser": "^1.4.6",
-    "express": "^4.18.2",
-    "serve-static": "^1.15.0",
+    "h3": "^1.12.0",
     "vue": "^3.4.25",
     "vue-router": "^4.3.2"
   },
