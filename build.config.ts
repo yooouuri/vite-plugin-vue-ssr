@@ -11,12 +11,12 @@ export default defineBuildConfig({
       outDir: 'dist/plugin',
     }
   ],
-  externals: ['express', /@unhead/],
+  externals: [/@unhead/],
   clean: true,
   declaration: true,
   rollup: {
     esbuild: {
-      minify: false,
+      minify: true,
     },
   },
 })
