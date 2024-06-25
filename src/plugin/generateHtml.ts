@@ -21,16 +21,16 @@ export async function generateHtml(template: string,
     htmlHead?.insertAdjacentHTML('beforeend', styles)
   }
 
+  const body = root.querySelector('body')
+
   if (state.value !== undefined) {
     const { uneval } = await import('devalue')
 
-    htmlHead?.insertAdjacentHTML('afterend', `<script>window.__INITIAL_STATE__ = ${uneval(state.value)}</script>`)
+    body?.insertAdjacentHTML('beforeend', `<script id="state">window.__INITIAL_STATE__ = ${uneval(state.value)}</script>`)
   }
 
-  const body = root.querySelector('body')
-
   if (teleports['#teleports'] !== undefined) {
-    body?.insertAdjacentHTML('afterend', `<div id="teleports">${teleports['#teleports']}</div>`)
+    body?.insertAdjacentHTML('beforeend', `<div id="teleports">${teleports['#teleports']}</div>`)
   }
 
   const resolvedTags = await head.resolveTags()
@@ -57,10 +57,9 @@ export async function generateHtml(template: string,
       }
 
       const el = new HTMLElement(tag.tag, {}, props)
-
-      if (tag.innerHTML !== undefined) {
-        el.textContent = tag.innerHTML
-      }
+      el.textContent = tag.innerHTML
+        ?? tag.textContent
+          ?? ''
 
       htmlHead?.appendChild(el)
     })
