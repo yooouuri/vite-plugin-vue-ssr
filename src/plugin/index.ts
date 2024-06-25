@@ -9,6 +9,8 @@ import { createApp, defineEventHandler, H3Event, toNodeListener } from 'h3'
 import { transformEntrypoint } from './transformEntrypoint'
 import { generateHtml } from './generateHtml'
 import type { Params, CallbackFn } from '../types'
+import { renderCssForSsr } from './renderCssForSsr'
+import { renderPreloadLinks } from './renderPreloadLinks'
 
 declare function vueSSRFn(App: App, params: Params, cb: CallbackFn): { App: App } & Params & { cb: CallbackFn }
 
@@ -105,13 +107,22 @@ export default function vueSsrPlugin(): Plugin {
 
             const loadedModules = server.moduleGraph.getModulesByFile(resolve(cwd(), ssr as string))
 
+            let styles
+
+            if (loadedModules !== undefined) {
+              styles = renderCssForSsr(loadedModules)
+            }
+
+            const preloadLinks = renderPreloadLinks(ctx.modules, {})
+
             const html = await generateHtml(
               template,
+              preloadLinks,
               rendered,
-              ctx,
+              ctx.teleports ?? {},
               state,
               head,
-              loadedModules
+              styles
             )
 
             return html
@@ -151,7 +162,9 @@ async function generateTemplate(
 
   const rendered = await renderToString(app, ctx)
 
-  const html = await generateHtml(template, rendered, ctx, state, head, undefined, manifest)
+  const preloadLinks = renderPreloadLinks(ctx.modules, manifest ?? {})
+
+  const html = await generateHtml(template, preloadLinks, rendered, ctx.teleports ?? {}, state, head)
 
   return html
 }
