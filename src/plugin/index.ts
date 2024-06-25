@@ -13,6 +13,8 @@ import { transformEntrypoint } from './transformEntrypoint'
 import { generateHtml } from './generateHtml'
 import type { Params, CallbackFn } from '../types'
 import { Router } from 'vue-router'
+import { renderCssForSsr } from './renderCssForSsr'
+import { renderPreloadLinks } from './renderPreloadLinks'
 
 declare function vueSSRFn(App: App, params: Params, cb: CallbackFn): { App: App } & Params & { cb: CallbackFn }
 
@@ -87,27 +89,27 @@ export default function vueSsrPlugin(): Plugin {
 
               let template: string | undefined = readFileSync(resolve(cwd(), 'index.html'), 'utf-8')
               template = await server.transformIndexHtml(url, template)
-  
+
               const { App, routes, cb, scrollBehavior }: ReturnType<typeof vueSSRFn> = (await server.ssrLoadModule(resolve(cwd(), ssr as string))).default
-  
+
               const { vueSSR } = (await import('./vue'))
-  
+
               function callbackFn(request: Request, response: Response) {
                 return async function({ app, router, state }: { app: App, router: Router, state: any }) {
                   return await cb({ app, router, state, request, response })
                 }
               }
-  
+
               // @ts-ignore
               const { app, router, state, head } = await vueSSR(App, { routes, scrollBehavior }, callbackFn(request, response), true, true)
-  
+
               await router.push(url.replace(router.options.history.base, ''))
               await router.isReady()
-  
+
               let redirect = null
-  
+
               const cookies = new Set<string>()
-  
+
               const ctx: SSRContext = {
                 request,
                 response: {
@@ -121,30 +123,40 @@ export default function vueSsrPlugin(): Plugin {
                   redirect = `${router.options.history.base}${url}`
                 },
               }
-  
+
               const rendered = await renderToString(app, ctx)
-  
+
               const loadedModules = server.moduleGraph.getModulesByFile(resolve(cwd(), ssr as string))
-  
+
+              let styles
+
+              if (loadedModules !== undefined) {
+                styles = renderCssForSsr(loadedModules)
+              }
+
+              const preloadLinks = renderPreloadLinks(ctx.modules, {})
+
               const html = await generateHtml(
                 template,
+                preloadLinks,
                 rendered,
-                ctx,
+                ctx.teleports ?? {},
                 state,
                 head,
-                loadedModules)
-  
+                styles
+              )
+
               response.setHeader('Set-Cookie', [...cookies])
-  
+
               if (redirect !== null) {
                 // https://github.com/vitejs/vite/discussions/6562#discussioncomment-1999566
                 response.writeHead(302, {
                   location: redirect,
                 }).end()
-  
+
                 return
               }
-  
+
               response.end(html)
             } catch (e) {
               server.ssrFixStacktrace(e as Error)
@@ -214,7 +226,9 @@ async function generateTemplate(
     throw _err
   }
 
-  const html = await generateHtml(template, rendered, ctx, state, head, undefined, manifest)
+  const preloadLinks = renderPreloadLinks(ctx.modules, manifest ?? {})
+
+  const html = await generateHtml(template, preloadLinks, rendered, ctx.teleports ?? {}, state, head)
 
   return {
     html,
