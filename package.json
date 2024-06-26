@@ -1,6 +1,7 @@
 {
   "name": "vite-plugin-vue-ssr",
   "version": "0.0.9",
+  "packageManager": "pnpm@9.4.0",
   "type": "module",
   "license": "MIT",
   "description": "Vite plugin to develop Vue SSR apps",
