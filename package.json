@@ -28,7 +28,7 @@
   "scripts": {
     "dev": "unbuild --stub",
     "build": "unbuild",
-    "test": "vitest"
+    "unit-test": "vitest"
   },
   "keywords": [
     "vue",
