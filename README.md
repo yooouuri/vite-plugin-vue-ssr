@@ -7,6 +7,7 @@ Vite plugin to develop Vue SSR apps
 * State management
 * Teleports
 * [Unhead](https://unhead.unjs.io) support
+* Based on [H3](https://h3.unjs.io)
 
 ## Quick Setup
 
@@ -80,6 +81,8 @@ const routes = [
 export default vueSSR(App, { routes })
 ```
 
+### State management
+
 Pinia/Vuex is supported by using the `app` and `state` property inside the callback.
 
 ```typescript
@@ -96,11 +99,21 @@ export default vueSSR(App, { routes }, ({ app, state }) => {
 })
 ```
 
-> The state will be persisted on `window.__INITIAL_STATE__` property and serialized using `@nuxt/devalue`
+> The state will be persisted on `window.__INITIAL_STATE__` property and serialized using `devalue`
+
+### Router
 
 It's possible to make changes to the router, use the `router` property in the callback.
 
 ```typescript
+const routes = [
+  {
+    path: '/',
+    name: 'counter',
+    component: Counter,
+  },
+]
+
 export default vueSSR(App, { routes }, ({ router }) => {
   router.beforeEach(async (to, from) => {
     if (
@@ -113,28 +126,68 @@ export default vueSSR(App, { routes }, ({ router }) => {
 })
 ```
 
-The Express request and response objects are accessible from the callback. Make sure to wrap them in `import.meta.env.SSR`.
+To customize the router, just return the router instance.
+
+The `routes` parameter is omitted, because we create a fresh router instance in the method.
 
 ```typescript
-export default vueSSR(App, { routes }, ({ request, response }) => {
-  if (import.meta.env.SSR) {
-    console.log(request?.originalUrl)
+export default vueSSR(App, {}, async ({ app }) => {
+  const router = createRouter({
+    history: import.meta.env.SSR ? createMemoryHistory('/') : createWebHistory('/'),
+    routes: [
+      {
+        path: '/',
+        name: 'counter',
+        component: Counter,
+      },
+    ],
+  })
+  app.use(router)
+
+  return {
+    router,
   }
 })
 ```
 
-Or use `useSSRContext`.
+### H3
+
+H3 is the underlaying server. During development it injects as an middleware.
+
+The `event` param is used to access the H3 composables.
+
+> NOTE: only works in SSR
 
 ```typescript
-const { request, response } = useSSRContext()
+import { getRequestURL } from 'h3'
+
+export default vueSSR(App, { routes }, ({ event }) => {
+  if (import.meta.env.SSR) {
+    console.log(getRequestURL(event)) // "https://example.com/path"
+  }
+
+  console.log(event) // undefined
+})
+```
+
+In a Vue component, use the `useH3Event()` composable
+
+```typescript
+import { useH3Event } from 'vite-plugin-vue-ssr'
+import { getRequestURL } from 'h3'
 
 if (import.meta.env.SSR) {
-  console.log(request?.originalUrl)
+  const event = useH3Event()
+
+  console.log(getRequestURL(event)) // "https://example.com/path"
 }
 ```
 
-Using Teleport is supported, but requires a little bit of setup. Targeting `body` is not supported, use `#teleports` instead.
+See [https://h3.unjs.io/utils](https://h3.unjs.io/utils) for more composables.
 
+### Teleports
+
+Using `Teleport` is supported, but requires a little bit of setup. Targeting `body` is not supported (in SSR), use `#teleports` instead.
 
 ```html
 <template>
