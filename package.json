@@ -40,6 +40,7 @@
     "@babel/parser": "^7.24.7",
     "@babel/traverse": "^7.24.7",
     "@babel/types": "^7.24.7",
+    "@unhead/ssr": "^1.9.14",
     "node-html-parser": "^6.1.13"
   },
   "devDependencies": {

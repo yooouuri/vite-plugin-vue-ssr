@@ -20,6 +20,9 @@ importers:
       '@babel/types':
         specifier: ^7.24.7
         version: 7.24.7
+      '@unhead/ssr':
+        specifier: ^1.9.14
+        version: 1.9.14
       node-html-parser:
         specifier: ^6.1.13
         version: 6.1.13
@@ -903,6 +906,9 @@ packages:
 
   '@unhead/shared@1.9.14':
     resolution: {integrity: sha512-7ZIC7uDV8gp3KHm5JxJ/NXMENQgkh+SCyTcsILSpOhkAGeszMHABrB6vjeZDGM4J9mRUxwyPn24KI2zG/R+XiQ==}
+
+  '@unhead/ssr@1.9.14':
+    resolution: {integrity: sha512-OIBZu+WBiyCcDMJ4Ysu7uA6yMZ3fWXWyVrT2w0my5oQJgA0BS7lzfReRL8Sw6+ORlupn9Rn++HXfV0ixtxCxIA==}
 
   '@unhead/vue@1.9.14':
     resolution: {integrity: sha512-Yc7Qv0ze+iLte4urHiA+ghkF7y+svrawrT+ZrCuGXkZ/eRTF/AY2SKex+rJQJZsP+fKEQ2pGb72IsI5kHFZT3A==}
@@ -2625,6 +2631,11 @@ snapshots:
   '@unhead/shared@1.9.14':
     dependencies:
       '@unhead/schema': 1.9.14
+
+  '@unhead/ssr@1.9.14':
+    dependencies:
+      '@unhead/schema': 1.9.14
+      '@unhead/shared': 1.9.14
 
   '@unhead/vue@1.9.14(vue@3.4.30(typescript@5.3.3))':
     dependencies:
