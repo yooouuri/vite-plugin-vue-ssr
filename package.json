@@ -41,6 +41,7 @@
     "@babel/traverse": "^7.24.1",
     "@babel/types": "^7.24.0",
     "@types/express": "^4.17.21",
+    "@unhead/ssr": "^1.9.14",
     "cookie": "^0.6.0",
     "cookie-parser": "^1.4.6",
     "node-html-parser": "^6.1.13"
