@@ -1,6 +1,23 @@
-import { parse, HTMLElement } from 'node-html-parser'
+import { parse } from 'node-html-parser'
 import type { VueHeadClient, MergeHead } from '@unhead/vue'
+import { renderSSRHead } from '@unhead/ssr'
 import { State } from '../types'
+
+function rawAttributesToAttributes(raw: string) {
+  const attrs: Record<string, any> = {}
+
+  const re = /([a-zA-Z()[\]#@$.?:][a-zA-Z0-9-_:()[\]#]*)(?:\s*=\s*((?:'[^']*')|(?:"[^"]*")|\S+))?/g
+  let match
+
+  while ((match = re.exec(raw))) {
+    const key = match[1]
+    let val = match[2] || null
+    if (val && (val[0] === `'` || val[0] === `"`)) val = val.slice(1, val.length - 1)
+    attrs[key] = attrs[key] || val
+  }
+
+  return attrs
+}
 
 export async function generateHtml(template: string,
                                    preloadLinks: string,
@@ -22,6 +39,7 @@ export async function generateHtml(template: string,
   }
 
   const body = root.querySelector('body')
+  const html = root.querySelector('html')
 
   if (state.value !== undefined) {
     const { uneval } = await import('devalue')
@@ -33,53 +51,17 @@ export async function generateHtml(template: string,
     body?.insertAdjacentHTML('beforeend', `<div id="teleports">${teleports['#teleports']}</div>`)
   }
 
-  const resolvedTags = await head.resolveTags()
+  const payload = await renderSSRHead(head)
 
-  const htmlTitle = root.querySelector('title')
-
-  if (htmlTitle !== null) {
-    const title = resolvedTags.find(t => t.tag === 'title')
-
-    if (title !== undefined) {
-      htmlTitle.textContent = title.textContent ?? ''
-    }
+  if (payload.headTags.includes('<title>')) {
+    root.querySelector('title')?.remove()
   }
 
-  const allowedTags = ['meta', 'link', 'base', 'style', 'script', 'noscript']
-
-  resolvedTags
-    .filter(tag => tag.tag === allowedTags.find(allowed => allowed === tag.tag))
-    .forEach(tag => {
-      let props = ''
-
-      for (const [key, value] of Object.entries(tag.props)) {
-        props = `${props} ${key}="${value}"`
-      }
-
-      const el = new HTMLElement(tag.tag, {}, props)
-      el.textContent = tag.innerHTML
-        ?? tag.textContent
-          ?? ''
-
-      htmlHead?.appendChild(el)
-    })
-
-  const bodyAttrs = resolvedTags.find(t => t.tag === 'bodyAttrs')
-
-  if (bodyAttrs !== undefined) {
-    for (const [key, value] of Object.entries(bodyAttrs.props)) {
-      body?.setAttribute(key, value)
-    }
-  }
-
-  const htmlAttrs = resolvedTags.find(t => t.tag === 'htmlAttrs')
-  const htmlRoot = root.querySelector('html')
-
-  if (htmlAttrs !== undefined) {
-    for (const [key, value] of Object.entries(htmlAttrs.props)) {
-      htmlRoot?.setAttribute(key, value)
-    }
-  }
+  htmlHead?.insertAdjacentHTML('afterbegin', payload.headTags)
+  html?.setAttributes(rawAttributesToAttributes(payload.htmlAttrs))
+  body?.setAttributes(rawAttributesToAttributes(payload.bodyAttrs))
+  body?.insertAdjacentHTML('afterbegin', payload.bodyTagsOpen)
+  body?.insertAdjacentHTML('beforeend', payload.bodyTags)
 
   return root.toString()
 }
