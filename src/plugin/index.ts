@@ -16,6 +16,8 @@ import { Router } from 'vue-router'
 
 declare function vueSSRFn(App: App, params: Params, cb: CallbackFn): { App: App } & Params & { cb: CallbackFn }
 
+type UnknownFunc = (...args: unknown[]) => void
+
 export default function vueSsrPlugin(): Plugin {
   let ssr: boolean | string | undefined
 
@@ -190,7 +192,27 @@ async function generateTemplate(
     },
   }
 
+  const { errorHandler } = app.config
+
+  let _err
+
+  // see: https://github.com/vuejs/core/issues/7876
+  // and: https://github.com/vuejs/core/issues/9364
+  if (process.env.NODE_ENV === 'production') {
+    app.config.errorHandler = (err, instance, info) => {
+      if (typeof errorHandler === 'function') {
+        (errorHandler as UnknownFunc).call(app, err, instance, info)
+      }
+
+      _err = err
+    }
+  }
+
   const rendered = await renderToString(app, ctx)
+
+  if (_err) {
+    throw _err
+  }
 
   const html = await generateHtml(template, rendered, ctx, state, head, undefined, manifest)
 
