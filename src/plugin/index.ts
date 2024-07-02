@@ -79,71 +79,79 @@ export default function vueSsrPlugin(): Plugin {
       if (ssr) {
         return () => {
           server.middlewares.use(cookieParser())
-          server.middlewares.use(async (request, response) => {
-            const url = request.originalUrl ?? '/'
+          server.middlewares.use(async (request, response, next) => {
+            try {
+              const url = request.originalUrl ?? '/'
 
-            let template: string | undefined = readFileSync(resolve(cwd(), 'index.html'), 'utf-8')
-            template = await server.transformIndexHtml(url, template)
-
-            const { App, routes, cb, scrollBehavior }: ReturnType<typeof vueSSRFn> = (await server.ssrLoadModule(resolve(cwd(), ssr as string))).default
-
-            const { vueSSR } = (await import('./vue'))
-
-            function callbackFn(request: Request, response: Response) {
-              return async function({ app, router, state }: { app: App, router: Router, state: any }) {
-                return await cb({ app, router, state, request, response })
+              let template: string | undefined = readFileSync(resolve(cwd(), 'index.html'), 'utf-8')
+              template = await server.transformIndexHtml(url, template)
+  
+              const { App, routes, cb, scrollBehavior }: ReturnType<typeof vueSSRFn> = (await server.ssrLoadModule(resolve(cwd(), ssr as string))).default
+  
+              const { vueSSR } = (await import('./vue'))
+  
+              function callbackFn(request: Request, response: Response) {
+                return async function({ app, router, state }: { app: App, router: Router, state: any }) {
+                  return await cb({ app, router, state, request, response })
+                }
               }
-            }
-
-            // @ts-ignore
-            const { app, router, state, head } = await vueSSR(App, { routes, scrollBehavior }, callbackFn(request, response), true, true)
-
-            await router.push(url.replace(router.options.history.base, ''))
-            await router.isReady()
-
-            let redirect = null
-
-            const cookies = new Set<string>()
-
-            const ctx: SSRContext = {
-              request,
-              response: {
-                // https://github.com/expressjs/express/blob/master/lib/response.js#L854-L887
-                cookie: (name: string, value: string, options: any) => {
-                  cookies.add(cookie.serialize(name, value, options))
+  
+              // @ts-ignore
+              const { app, router, state, head } = await vueSSR(App, { routes, scrollBehavior }, callbackFn(request, response), true, true)
+  
+              await router.push(url.replace(router.options.history.base, ''))
+              await router.isReady()
+  
+              let redirect = null
+  
+              const cookies = new Set<string>()
+  
+              const ctx: SSRContext = {
+                request,
+                response: {
+                  // https://github.com/expressjs/express/blob/master/lib/response.js#L854-L887
+                  cookie: (name: string, value: string, options: any) => {
+                    cookies.add(cookie.serialize(name, value, options))
+                  },
+                  ...response,
                 },
-                ...response,
-              },
-              redirect: (url: string) => {
-                redirect = `${router.options.history.base}${url}`
-              },
+                redirect: (url: string) => {
+                  redirect = `${router.options.history.base}${url}`
+                },
+              }
+  
+              const rendered = await renderToString(app, ctx)
+  
+              const loadedModules = server.moduleGraph.getModulesByFile(resolve(cwd(), ssr as string))
+  
+              const html = await generateHtml(
+                template,
+                rendered,
+                ctx,
+                state,
+                head,
+                loadedModules)
+  
+              response.setHeader('Set-Cookie', [...cookies])
+  
+              if (redirect !== null) {
+                // https://github.com/vitejs/vite/discussions/6562#discussioncomment-1999566
+                response.writeHead(302, {
+                  location: redirect,
+                }).end()
+  
+                return
+              }
+  
+              response.end(html)
+            } catch (e) {
+              server.ssrFixStacktrace(e as Error)
+              next(e)
             }
-
-            const rendered = await renderToString(app, ctx)
-
-            const loadedModules = server.moduleGraph.getModulesByFile(resolve(cwd(), ssr as string))
-
-            const html = await generateHtml(
-              template,
-              rendered,
-              ctx,
-              state,
-              head,
-              loadedModules)
-
-            response.setHeader('Set-Cookie', [...cookies])
-
-            if (redirect !== null) {
-              // https://github.com/vitejs/vite/discussions/6562#discussioncomment-1999566
-              response.writeHead(302, {
-                location: redirect,
-              }).end()
-
-              return
-            }
-
-            response.end(html)
           })
+
+          // @ts-ignore
+          globalThis.vite = server
         }
       }
     },
