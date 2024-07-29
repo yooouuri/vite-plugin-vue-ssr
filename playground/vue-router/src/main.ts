@@ -15,7 +15,6 @@ export default vueSSR(App, {}, async ({ app }) => {
       },
     ],
   })
-  app.use(router)
 
   return {
     router,
