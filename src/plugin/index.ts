@@ -14,6 +14,8 @@ import { renderPreloadLinks } from './renderPreloadLinks'
 
 declare function vueSSRFn(App: App, params: Params, cb: CallbackFn): { App: App } & Params & { cb: CallbackFn }
 
+type UnknownFunc = (...args: unknown[]) => void
+
 export default function vueSsrPlugin(): Plugin {
   let ssr: boolean | string | undefined
 
@@ -78,57 +80,65 @@ export default function vueSsrPlugin(): Plugin {
         return () => {
           const app = createApp()
           app.use(defineEventHandler(async (event) => {
-            const url = event.node.req.originalUrl ?? '/'
+            try {
+              const url = event.node.req.originalUrl ?? '/'
 
-            let template: string | undefined = readFileSync(resolve(cwd(), 'index.html'), 'utf-8')
-            template = await server.transformIndexHtml(url, template)
+              let template: string | undefined = readFileSync(resolve(cwd(), 'index.html'), 'utf-8')
+              template = await server.transformIndexHtml(url, template)
 
-            const { App, routes, cb, scrollBehavior }: ReturnType<typeof vueSSRFn> = (await server.ssrLoadModule(resolve(cwd(), ssr as string))).default
+              const { App, routes, cb, scrollBehavior }: ReturnType<typeof vueSSRFn> = (await server.ssrLoadModule(resolve(cwd(), ssr as string))).default
 
-            const { vueSSR } = (await import('./vue'))
+              const { vueSSR } = (await import('./vue'))
 
-            function callbackFn(event: H3Event) {
-              return async function({ app, router, state }: { app: App, router: Router, state: any }) {
-                return await cb({ app, router, state, event })
+              function callbackFn(event: H3Event) {
+                return async function({ app, router, state }: { app: App, router: Router, state: any }) {
+                  return await cb({ app, router, state, event })
+                }
               }
+
+              // @ts-ignore
+              const { app, router, state, head } = await vueSSR(App, { routes, scrollBehavior }, callbackFn(event), true, true)
+
+              await router.push(url.replace(router.options.history.base, ''))
+              await router.isReady()
+
+              const ctx: SSRContext = {
+                event,
+              }
+
+              const rendered = await renderToString(app, ctx)
+
+              const loadedModules = server.moduleGraph.getModulesByFile(resolve(cwd(), ssr as string))
+
+              let styles
+
+              if (loadedModules !== undefined) {
+                styles = renderCssForSsr(loadedModules)
+              }
+
+              const preloadLinks = renderPreloadLinks(ctx.modules, {})
+
+              const html = await generateHtml(
+                template,
+                preloadLinks,
+                rendered,
+                ctx.teleports ?? {},
+                state,
+                head,
+                styles
+              )
+
+              return html
+            } catch (e) {
+              server.ssrFixStacktrace(e as Error)
+              // next(e)
             }
-
-            // @ts-ignore
-            const { app, router, state, head } = await vueSSR(App, { routes, scrollBehavior }, callbackFn(event), true, true)
-
-            await router.push(url.replace(router.options.history.base, ''))
-            await router.isReady()
-
-            const ctx: SSRContext = {
-              event,
-            }
-
-            const rendered = await renderToString(app, ctx)
-
-            const loadedModules = server.moduleGraph.getModulesByFile(resolve(cwd(), ssr as string))
-
-            let styles
-
-            if (loadedModules !== undefined) {
-              styles = renderCssForSsr(loadedModules)
-            }
-
-            const preloadLinks = renderPreloadLinks(ctx.modules, {})
-
-            const html = await generateHtml(
-              template,
-              preloadLinks,
-              rendered,
-              ctx.teleports ?? {},
-              state,
-              head,
-              styles
-            )
-
-            return html
           }))
 
           server.middlewares.use(toNodeListener(app))
+
+          // @ts-ignore
+          globalThis.vite = server
         }
       }
     },
@@ -160,7 +170,27 @@ async function generateTemplate(
     event,
   }
 
+  const { errorHandler } = app.config
+
+  let _err
+
+  // see: https://github.com/vuejs/core/issues/7876
+  // and: https://github.com/vuejs/core/issues/9364
+  if (process.env.NODE_ENV === 'production') {
+    app.config.errorHandler = (err, instance, info) => {
+      if (typeof errorHandler === 'function') {
+        (errorHandler as UnknownFunc).call(app, err, instance, info)
+      }
+
+      _err = err
+    }
+  }
+
   const rendered = await renderToString(app, ctx)
+
+  if (_err) {
+    throw _err
+  }
 
   const preloadLinks = renderPreloadLinks(ctx.modules, manifest ?? {})
 
