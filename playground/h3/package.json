@@ -1,6 +1,6 @@
 {
   "private": true,
-  "name": "pinia-example",
+  "name": "h3",
   "version": "0.0.0",
   "type": "module",
   "scripts": {
@@ -11,9 +11,7 @@
   },
   "dependencies": {
     "@unhead/vue": "^1.9.16",
-    "devalue": "^5.0.0",
     "h3": "^1.12.0",
-    "pinia": "^2.2.0",
     "serve-static": "^1.15.0",
     "vue": "^3.4.34",
     "vue-router": "^4.4.0"
