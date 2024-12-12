@@ -26,8 +26,8 @@ const routes = [
 
 export default vueSSR(App, { routes }, async ({ event }) => {
   if (import.meta.env.SSR) {
-    console.log(getRequestURL(event))
-  }
+    console.log(getRequestURL(event!))
 
-  console.log(event)
+    console.log(event)
+  }
 })
