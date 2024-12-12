@@ -12,17 +12,17 @@
   "dependencies": {
     "@unhead/vue": "^1.11.14",
     "h3": "^1.13.0",
-    "serve-static": "^1.15.0",
+    "serve-static": "^1.16.2",
     "vue": "^3.5.13",
     "vue-router": "^4.5.0"
   },
   "devDependencies": {
-    "@tsconfig/node20": "^20.1.0",
-    "@types/node": "^20.14.13",
-    "@vitejs/plugin-vue": "^5.1.1",
-    "@vue/tsconfig": "^0.5.0",
-    "typescript": "^5.5.0",
-    "vite": "^5.3.5",
+    "@tsconfig/node22": "^22.0.0",
+    "@types/node": "^22.10.2",
+    "@vitejs/plugin-vue": "^5.2.1",
+    "@vue/tsconfig": "^0.7.0",
+    "typescript": "^5.7.2",
+    "vite": "^6.0.3",
     "vite-plugin-vue-ssr": "workspace:*"
   }
 }
