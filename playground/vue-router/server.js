@@ -1,14 +1,12 @@
 import { readFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { createServer } from 'node:http'
+import { createApp, defineEventHandler, fromNodeMiddleware, toNodeListener } from 'h3'
 import { generateTemplate } from 'vite-plugin-vue-ssr/plugin'
-import express from 'express'
-import cookieParser from 'cookie-parser'
 import serveStatic from 'serve-static'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
-
-const app = express()
 
 const main = (await import(resolve(__dirname, './dist/server/main.js'))).default
 
@@ -18,24 +16,15 @@ const manifest = JSON.parse(
   readFileSync(resolve('dist/client/.vite/ssr-manifest.json'), 'utf-8')
 )
 
-app.use((await import('compression')).default())
-app.use(cookieParser())
-app.use('/', serveStatic(resolve('dist/client'), { index: false }))
-app.use('*', async (req, res) => {
-  const url = req.originalUrl
+const app = createApp()
 
-  const { html, redirect } = await generateTemplate(main, url, template, req, res, manifest)
+app.use(fromNodeMiddleware(serveStatic(resolve('dist/client'), { index: false })))
+app.use(defineEventHandler(async (event) => {
+  const url = event.node.req.originalUrl ?? '/'
 
-  if (redirect !== null) {
-    res.redirect(redirect)
-    return
-  }
+  const html = await generateTemplate(main, url, template, event, manifest)
 
-  res.status(200)
-    .set({ 'Content-Type': 'text/html' })
-    .end(html)
-})
+  return html
+}))
 
-app.listen(3000, () => {
-  console.log('http://localhost:3000')
-})
+createServer(toNodeListener(app)).listen(3000, () => console.log('server listening on 3000'))
